@@ -23,6 +23,8 @@ on:
           description: 'Environment to run tests against'
           type: environment
           required: true
+env:
+  INPUT_LOG_LEVEL: ${{ github.event.inputs.log_Level }}
 jobs:
     print-tag:
       runs-on: ubuntu-latest
@@ -30,3 +32,5 @@ jobs:
       steps:
         - name: Print the input tag to STDOUT
           run: echo  The tags are ${{ inputs.tags }} 
+        - name: echo environments
+          run: echo "The log level is $INPUT_LOG_LEVEL"
