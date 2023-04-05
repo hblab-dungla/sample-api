@@ -1,7 +1,8 @@
 # name: Run tests
 
 
-name: Run124412441
+
+name: main
 on:
   workflow_dispatch:
 
@@ -20,6 +21,6 @@ jobs:
       - uses: trstringer/manual-approval@v1
         with:
           secret: ${{ github.TOKEN }}
-          approvers: hblab-dungla
+          approvers: trstringer,acdunnigan
       - name: Deploy to production
         run: echo deploying
