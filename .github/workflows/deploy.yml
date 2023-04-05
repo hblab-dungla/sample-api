@@ -1,3 +1,4 @@
+name: deploy 2222222
 on:
     workflow_dispatch:
       inputs:
