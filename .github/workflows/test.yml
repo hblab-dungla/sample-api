@@ -1,67 +1,85 @@
-name: 'Link Checker: All English'
-
-# **What it does**: Renders the content of every page and check all internal links.
-# **Why we have it**: To make sure all links connect correctly.
-# **Who does it impact**: Docs content.
-
+# this workflow deploys our backend system to stage env on AWS.
+# this manually runs anytime you want, but basically, our stage/prod environement supports the blue/green deployment
+# so that you don't kick this code unless this repo is updated.
+name: cd pipeline for stage env for ana
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-  pull_request:
-
-permissions:
-  contents: read
-  # Needed for the 'trilom/file-changes-action' action
-  pull-requests: read
-
-# This allows a subsequently queued workflow run to interrupt previous runs
-concurrency:
-  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
-  cancel-in-progress: true
-
+    inputs:
+      actions:
+        description: 'create/update (apply) or break up (destroy)? Valid value: apply/destroy'
+        required: true
+        default: 'apply'
+        type: string
+      lottery_batch:
+        description: 'Whether to create lottery_batch'
+        required: true
+        default: true
+        type: boolean
+      apply:
+        description: 'if true, run "apply". if false, just run plan'
+        type: boolean
+        default: false
+        required: false
+env:
+  ENVIRON: stage
 jobs:
-  check-links:
-    runs-on: ${{ fromJSON('["ubuntu-latest", "self-hosted"]')[github.repository == 'github/docs-internal'] }}
+  preproc:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./tenants/pre-env
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      # installation
+      - uses: actions/checkout@v2
+      # - uses: hashicorp/setup-terraform@v1
+      #   with:
+      #     terraform_wrapper: false
+      # - name: "set credentials for running scripts on a primary AWS account"
+      #   uses: aws-actions/configure-aws-credentials@v1
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ secrets.ANA_POCKET_AWS_REGION }}
+      # terraform execution
+      - run: echo 1
+      - run: echo 2
+      - run: echo 3
+  build:
+    needs: [preproc]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./tenants/env
+    env:
+      # TF_CLI_ARGS_init: -backend-config='bucket=${{ secrets.ANA_POCKET_TENANT_NAME }}-${{ secrets.APP_NAME }}-terraform-state' -backend-config='key=stage-tenant-creation-terraform.tfstate' -backend-config='region=${{ secrets.ANA_POCKET_AWS_REGION }}' -backend-config='dynamodb_table=${{ secrets.ANA_POCKET_TENANT_NAME }}-${{ secrets.APP_NAME }}-terraform-state-lock' -backend-config='encrypt=true'
+      # OPENAPI_SPEC: ./openapi-app.yml
+      # ADMIN_OPENAPI_SPEC: ./openapi-adm.yml
+      # # go to parent of tenants/env (don't know why, but cannot use GITHUB_WORKSPACE env)
+      # AUTH_CONFIG_CREATOR: ../../lambda-authorizer/lambda_authorizer/auth_configs.py
+      PYVER: 3.8
+    steps:
+      # installation
+      - uses: actions/checkout@v2
 
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16.13.x
-          cache: npm
-
-      - name: Install
-        run: npm ci
-
-      # Creates file "$/files.json", among others
-      - name: Gather files changed
-        uses: trilom/file-changes-action@a6ca26c14274c33b15e6499323aac178af06ad4b
-        with:
-          fileOutput: 'json'
-
-      # For verification
-      - name: Show files changed
-        run: cat $HOME/files.json
-
-      - name: Link check (warnings, changed files)
+      # terraform execution
+      # - uses: hashicorp/setup-terraform@v1
+      #   with:
+      #     terraform_wrapper: false
+      # - name: set credentials for running scripts on a production env AWS account
+      #   uses: aws-actions/configure-aws-credentials@v1
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ secrets.ANA_POCKET_AWS_REGION }}
+      #     role-to-assume: ${{ secrets.ANA_POCKET_ASSUME_ROLE }}
+      #     role-duration-seconds: 3600
+      #     role-session-name: "tenant-env"
+      - name: put destroy mode into command if choose 'destroy' in actions
         run: |
-          ./script/rendered-content-link-checker.mjs \
-            --language en \
-            --max 100 \
-            --check-anchors \
-            --check-images \
-            --verbose \
-            --list $HOME/files.json
-
-      - name: Link check (critical, all files)
-        run: |
-          ./script/rendered-content-link-checker.mjs \
-            --language en \
-            --exit \
-            --verbose \
-            --check-images \
-            --level critical
+          echo "MODE=-destroy" >> $GITHUB_ENV
+        if: ${{ inputs.actions == 'destroy' }}
+      - run: echo 55
+      - run: echo 66
+      - name: run apply
+        if: ${{ inputs.apply }}
+        run: echo 77apply
