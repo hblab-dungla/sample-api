@@ -24,7 +24,7 @@ on:
           type: environment
           required: true
 env:
-  INPUT_LOG_LEVEL: ${{ github.event.inputs.log_Level }}
+  INPUT_LOG_LEVEL: ${{ github.event.inputs.logLevel }}
 jobs:
     print-tag:
       runs-on: ubuntu-latest
