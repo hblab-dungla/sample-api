@@ -83,7 +83,7 @@ jobs:
           echo "MODE=-destroy" >> $GITHUB_ENV
         if: ${{ inputs.actions == 'destroy' }}
       - run: echo 55
-      - run: echo 66
+      - run: echo  66 ${{ env.MODE }}
       - name: run apply
         if: ${{ inputs.apply }}
         run: echo 77apply
