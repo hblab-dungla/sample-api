@@ -42,6 +42,10 @@ jobs:
       #     aws-region: ${{ secrets.ANA_POCKET_AWS_REGION }}
       # terraform execution
       - run: echo 1
+      - run: |
+          pwd
+          echo 12341515224
+          ls -la
       - run: echo 2
       - run: echo 3
   build:
