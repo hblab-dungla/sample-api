@@ -1,0 +1,59 @@
+# Copyright (c) 2021. Archetype Digital Inc. All rights reserved.
+
+# The copyright to the computer software herein is the property of
+# Archetype Digital Inc. The software may be used and/or copied only
+# with the written permission of Archetype Digital Inc. or in accordance
+# with the terms and conditions stipulated in the agreement/contract
+# under which the software has been supplied.
+
+name: CD pipeline for geocode common
+on:
+  workflow_dispatch:
+    inputs:
+      execute:
+        description: if true, run "apply" or "destroy"
+        type: boolean
+        default: false
+        required: false
+      mode:
+        description: "mode of terrafrom: apply or destroy"
+        type: choice
+        options:
+        - apply
+        - destroy
+        default: 'apply'
+        required: false
+jobs:
+  deployment:
+    env:
+      DESTROY_OPTION: ''
+      TF_CLI_ARGS_init: -backend-config='bucket=${{ vars.VENDOR_NAME }}-terraform-state' -backend-config='key=${{ vars.VENDOR_NAME }}-geocode-common-terraform.tfstate' -backend-config='region=${{ vars.ATD_NET_DEFAULT_REGION }}' -backend-config='dynamodb_table=${{ vars.VENDOR_NAME }}-geocode-terraform-state-lock' -backend-config='encrypt=true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./services/geocode/common
+    steps:
+      # installation
+      - uses: actions/checkout@v3
+      # terraform execution
+      - uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_wrapper: false
+      - name: set credentials for running scripts on a production env AWS account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.ATD_NET_DEFAULT_REGION }}
+          role-to-assume: ${{ vars.ATD_NET_ASSUME_ROLE }}
+          role-duration-seconds: 3600
+          role-session-name: "atd-net-geocode-common"
+      - run: terraform init
+      - name: set the destroy option
+        if: ${{ inputs.mode == 'destroy' }}
+        run: echo "DESTROY_OPTION=-destroy" >> $GITHUB_ENV
+      - name: plan apply/destroy
+        run: terraform plan ${{ env.DESTROY_OPTION }} -out=geocode-common-plan.out
+      - name: execute apply/destroy
+        if: ${{ inputs.execute }}
+        run: terraform apply -auto-approve geocode-common-plan.out
