@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: build
-      - run: echo 'building'
+        run: echo 'building'
   
   publish:
     needs: [build]
@@ -18,4 +18,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: publish
-      - run: echo 'publishing'
+        run: echo 'publishing'
