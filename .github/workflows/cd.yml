@@ -25,13 +25,7 @@ on:
         required: false
 jobs:
   deployment:
-    env:
-      DESTROY_OPTION: ''
-      TF_CLI_ARGS_init: -backend-config='bucket=${{ vars.VENDOR_NAME }}-terraform-state' -backend-config='key=${{ vars.VENDOR_NAME }}-geocode-common-terraform.tfstate' -backend-config='region=${{ vars.ATD_NET_DEFAULT_REGION }}' -backend-config='dynamodb_table=${{ vars.VENDOR_NAME }}-geocode-terraform-state-lock' -backend-config='encrypt=true'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./services/geocode/common
     steps:
       # installation
       - uses: actions/checkout@v3
@@ -39,21 +33,11 @@ jobs:
       - uses: hashicorp/setup-terraform@v1
         with:
           terraform_wrapper: false
-      - name: set credentials for running scripts on a production env AWS account
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.ATD_NET_DEFAULT_REGION }}
-          role-to-assume: ${{ vars.ATD_NET_ASSUME_ROLE }}
-          role-duration-seconds: 3600
-          role-session-name: "atd-net-geocode-common"
-      - run: terraform init
       - name: set the destroy option
         if: ${{ inputs.mode == 'destroy' }}
         run: echo "DESTROY_OPTION=-destroy" >> $GITHUB_ENV
       - name: plan apply/destroy
-        run: terraform plan ${{ env.DESTROY_OPTION }} -out=geocode-common-plan.out
+        run: echo "mode mode mode ${{ env.DESTROY_OPTION }} "
       - name: execute apply/destroy
         if: ${{ inputs.execute }}
-        run: terraform apply -auto-approve geocode-common-plan.out
+        run: echo "that is apply............." 
