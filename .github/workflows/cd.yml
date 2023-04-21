@@ -24,6 +24,12 @@ on:
         default: 'apply'
         required: false
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # installation
+      - uses: actions/checkout@v3
+      - run: echo "111111111"
   deployment:
     runs-on: ubuntu-latest
     steps:
