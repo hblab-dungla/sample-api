@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: build
-        run: echo 'buildiaang'
+        run: echo 'buildiaanaag'
   
   publish:
     needs: [build]
